@@ -1,0 +1,162 @@
+;------------------------
+;Name Taming script
+;Author vavan
+;Date 11/21/2013
+;------------------------
+
+
+;Variable's block
+;------------------------
+
+;System!
+set %jrnl #jindex
+set %tame #false
+set %taming #false
+set %followers #FOLLOWERS
+set %target_id X
+set %target_type X
+
+;User #true #false
+set %typeTame #true
+set %petName A
+set %release #true
+set %kill #true
+set %follow #true
+;------------------------
+
+
+begin:
+ ;getting target
+ if %target_id = X
+ {
+  set #targCurs 1
+  targLoop:
+  if #targCurs = 1
+   goto targLoop
+  finditem #LTARGETID
+ }
+ else
+ {
+  if ! %typeTame
+   halt
+  finditem %target_type
+ }
+
+ ;target handler
+ if #FINDID = X
+  goto targLoop
+ set %target_id #FINDID
+ set %target_type #FINDTYPE
+ set #LTARGETID #FINDID
+ set %tame #true
+  
+
+ ;taming loop
+ while %tame
+ {
+  gosub EventHandler
+  if %follow
+   gosub Moving 2
+  gosub Taming
+ }
+
+;loop
+goto begin
+
+
+sub EventHandler
+ if #FOLLOWERS > %followers
+ {
+  if %release
+   gosub petRelease
+  if %kill
+   gosub Kill
+  set %tame #false
+  set %taming #false
+ }
+
+ while #jindex > %jrnl
+ {
+  set %jrnl %jrnl + 1
+  scanjournal %jrnl
+
+  if Can't_get_there in #journal
+  {
+   set %tame #false
+   ignoreitem %target_id
+  }
+
+  if You_fail_to_tame in #journal
+   set %taming #false
+
+  if That_is_too_far_away = #journal
+   set %taming #false
+
+  if is_too_angry in #journal
+   set %taming #false
+
+  if You_start_to_tame in #journal
+   set %taming #true
+
+  if looks_tame_already in #journal
+   ignoreitem %target_id
+ }
+return
+
+
+sub Moving
+ if ! %tame
+  return
+ finditem %target_id
+ if #FINDX - #CHARPOSX > %1 || #FINDX - #CHARPOSX < %1 * -1
+  event PathFind #FINDX #FINDY
+ else
+  if #FINDY - #CHARPOSY > %1 || #FINDY - #CHARPOSY < %1 * -1
+   event PathFind #FINDX #FINDY
+return
+
+
+sub Taming
+ if ! %tame
+  return
+ if %taming
+  return
+ event macro 13 35
+ target 3s
+ event macro 22 0
+return
+
+
+sub petRelease
+ Exevent RenamePet #LTARGETID %petName
+ msg %petName release$
+ wait 10
+ set %x 42 + #CONTPOSX
+ set %y 92 + #CONTPOSY
+ click %x %y
+return
+
+
+sub Kill
+ finditem %target_id
+ set #LTARGETID #FINDID
+ ;~virtue + all kill
+ if #FINDID <> X
+ {
+  event macro 49 1
+  target 3s
+  event macro 22 0
+  msg all kill$
+  target 3s
+  event macro 22 0
+ }
+ ;~
+ while #FINDID <> X
+ {
+  gosub moving 1
+  event macro 27 0
+  wait 1s
+  finditem %target_id
+ }
+ key F9
+return
