@@ -17,10 +17,10 @@ set %target_id X
 set %target_type X
 
 ;User #true #false
-set %typeTame #true
+set %typeTame #false
 set %petName A
-set %release #true
-set %kill #true
+set %release #false
+set %kill #false
 set %follow #true
 ;------------------------
 
@@ -100,6 +100,9 @@ sub EventHandler
 
   if looks_tame_already in #journal
    ignoreitem %target_id
+   
+  if do_not_have_a_clear_path in #journal
+   set %taming #false
  }
 return
 
